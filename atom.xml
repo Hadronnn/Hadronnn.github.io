@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://hadronnn.github.io/</id>
     <title>Gridea</title>
-    <updated>2019-12-27T08:23:13.964Z</updated>
+    <updated>2019-12-27T08:42:59.245Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://hadronnn.github.io/"/>
     <link rel="self" href="https://hadronnn.github.io//atom.xml"/>
@@ -10,6 +10,94 @@
     <logo>https://hadronnn.github.io//images/avatar.png</logo>
     <icon>https://hadronnn.github.io//favicon.ico</icon>
     <rights>All rights reserved 2019, Gridea</rights>
+    <entry>
+        <title type="html"><![CDATA[Guns框架使用反射在生成业务删除日志时记录数据]]></title>
+        <id>https://hadronnn.github.io//post/guns-kuang-jia-shi-yong-fan-she-zai-sheng-cheng-ye-wu-shan-chu-ri-zhi-shi-ji-lu-shu-ju</id>
+        <link href="https://hadronnn.github.io//post/guns-kuang-jia-shi-yong-fan-she-zai-sheng-cheng-ye-wu-shan-chu-ri-zhi-shi-ji-lu-shu-ju">
+        </link>
+        <updated>2019-12-27T08:23:50.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="在logaop中添加条件">在LogAop中添加条件</h1>
+<hr>
+<pre><code>else if(bussinessName.contains(&quot;业务删除&quot;) ) {
+            //执行删除逻辑前一定要存删除日志中需要记录的关键信息
+            AbstractDictMap dictMap = (AbstractDictMap) dictClass.newInstance();
+            Object obj1 = LogObjectHolder.me().get();
+            msg = Contrast.parseDeleteKey(dictMap, key, obj1);
+        }
+</code></pre>
+<ol>
+<li>首先判断实业误删除操作</li>
+<li>获取对应的 中英文对应名称 字典</li>
+<li>获取相应参数</li>
+</ol>
+<h1 id="在contrast中添加处理删除业务的方法">在Contrast中添加处理删除业务的方法</h1>
+<pre><code>public static String parseDeleteKey(AbstractDictMap dictMap, String key, Object obj) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            Class clazz = obj.getClass();
+            // 获取属性
+            Field[] fields = obj.getClass().getDeclaredFields();
+            int i = 1;
+            for (Field field : fields) {
+                if (&quot;serialVersionUID&quot;.equals(field.getName())) {
+                    continue;
+                }
+                // 拼接get方法
+                String prefix = &quot;get&quot;;
+                if (field.getType().getName().equals(&quot;java.lang.Boolean&quot;)) {
+                    prefix = &quot;is&quot;;
+                }
+                Method getMethod = null;
+                try {
+                    getMethod = clazz.getDeclaredMethod(prefix + StrUtil.upperFirst(field.getName()));
+                } catch (NoSuchMethodException e) {
+                    System.err.println(&quot;this className:&quot; + clazz.getName() + &quot; is not methodName: &quot; + e.getMessage());
+                    continue;
+                }
+                // 获取属性值
+                Object o1 = getMethod.invoke(obj);
+                if (o1 == null) {
+                    continue;
+                }
+                if (o1 instanceof Date) {
+                    o1 = DateUtil.formatDate((Date) o1);
+                }
+                // 获取 字典中于属性对应的 中文名称
+                String fieldName = dictMap.get(field.getName());
+                String fieldWarpperMethodName = dictMap.getFieldWarpperMethodName(field.getName());
+                if (fieldName == null) {
+                    continue;
+                }
+                if (i != 1) {
+                    sb.append(separator);
+                }
+                // 处理返回数据
+                if (fieldWarpperMethodName != null) {
+                    Object fieldWarpper = DictFieldWarpperFactory.createFieldWarpper(o1, fieldWarpperMethodName);
+                    sb.append(fieldName+&quot;=&quot;+fieldWarpper);
+                } else {
+                    sb.append(fieldName+&quot;=&quot;+o1);
+                }
+
+                i++;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
+
+    }
+</code></pre>
+<hr>
+<blockquote>
+<p>备注：</p>
+<blockquote>
+<p>使用<em>面向切面编程思想</em>和<em>反射机制</em>，并通过 <em>注解</em> 来实现 业务删除业务 保存删除实体的属性</p>
+</blockquote>
+</blockquote>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Hello Gridea]]></title>
         <id>https://hadronnn.github.io//post/hello-gridea</id>
